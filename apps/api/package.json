@@ -11,7 +11,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && cp tsconfig.json dist/",
     "start": "node -r tsconfig-paths/register dist/index.js",
     "lint": "eslint src",
     "db:generate": "drizzle-kit generate",
