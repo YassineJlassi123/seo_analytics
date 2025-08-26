@@ -1,20 +1,26 @@
 {
   "name": "my-turbo-app",
+  "version": "0.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "clean": "turbo clean"
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
-    "turbo": "^2.5.6",
-    "typescript": "5.9.2"
+    "eslint": "latest",
+    "pnpm": "latest",
+    "prettier": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
   },
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "node": ">=18"
+  "packageManager": "pnpm@9.0.6",
+  "dependencies": {
+    "hono": "4.9.4"
   }
 }

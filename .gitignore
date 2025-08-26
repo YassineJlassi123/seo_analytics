@@ -5,6 +5,9 @@ node_modules
 .pnp
 .pnp.js
 
+# Lockfile
+pnpm-lock.yaml
+
 # Local env files
 .env
 .env.local
@@ -26,7 +29,13 @@ coverage
 out/
 build
 dist
+*.tsbuildinfo
 
+# Drizzle
+drizzle/
+
+# Logs
+logs/
 
 # Debug
 npm-debug.log*

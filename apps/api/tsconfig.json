@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "composite": true,
+    "rootDir": "src",
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "module": "NodeNext",
+    "target": "es2021",
+    "lib": ["es2021", "dom", "dom.iterable"],
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "src/routes.ts"],
+  "exclude": ["node_modules"]
+}

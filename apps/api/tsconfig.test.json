@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "outDir": "test_dist",
+    "rootDir": "src",
+    "module": "commonjs",
+    "target": "es2021",
+    "declaration": true,
+    "noEmit": false
+  },
+  "include": ["src/test.ts"]
+}
