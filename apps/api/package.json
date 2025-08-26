@@ -42,7 +42,8 @@
     "postgres": "^3.4.7",
     "puppeteer": "^24.17.0",
     "winston": "latest",
-    "zod": "latest"
+    "zod": "latest",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

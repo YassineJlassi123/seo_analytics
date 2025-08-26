@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import app from '@/app.js';
 import { env } from '@/config/env.js';
 import { logger } from '@/utils/logger.js';
-import '@/services/queue.service.js'; // This will initialize and start the BullMQ worker
+import '@/services/queue.service.js'; // This will initialize and start the BullMQ worker 
 
 const port = parseInt(env.PORT);
 
