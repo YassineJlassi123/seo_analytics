@@ -1,6 +1,5 @@
 import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
 
-// Schema definitions
 export const websites = pgTable('websites', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
@@ -22,9 +21,9 @@ export const reports = pgTable('reports', {
   bestPractices: integer('best_practices'),
   seo: integer('seo'),
   pwa: integer('pwa'),
-  metrics: text('metrics'), // JSON string
-  opportunities: text('opportunities'), // JSON string
-  diagnostics: text('diagnostics'), // JSON string
-  rawReport: text('raw_report'), // JSON string
+  metrics: text('metrics'), 
+  opportunities: text('opportunities'),
+  diagnostics: text('diagnostics'), 
+  rawReport: text('raw_report'),
   createdAt: timestamp('created_at').notNull(),
 });

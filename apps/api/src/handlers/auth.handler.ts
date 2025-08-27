@@ -48,7 +48,6 @@ export const getUserById = async (c: AuthContext) => {
 
     const requestedUserId = c.req.param('id');
     
-    // For now, users can only get their own info
     if (requestedUserId !== auth.userId) {
       return error(c, 'Forbidden', 403);
     }

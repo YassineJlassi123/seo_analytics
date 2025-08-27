@@ -13,7 +13,7 @@ export const success = <T = any>(
       data,
       message,
     },
-    { status: status as any } // cast forcé
+    { status: status as any } 
   );
 };
 
@@ -29,7 +29,7 @@ export const error = (
       message,
       details,
     },
-    { status: status as any } // cast forcé
+    { status: status as any } 
   );
 };
 

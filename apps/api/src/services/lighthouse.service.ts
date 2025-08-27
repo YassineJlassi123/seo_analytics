@@ -8,7 +8,6 @@ export interface LighthouseOptions {
   screenEmulation?: any;
 }
 
-// Define types for Lighthouse audit structure
 interface LighthouseAudit {
   id: string;
   title: string;
@@ -70,7 +69,6 @@ export const runLighthouseAnalysis = async (
     const portMatch = wsEndpoint.match(/:(\d+)\//);
     const port = portMatch ? parseInt(portMatch[1] || '0', 10) : 9222;
     
-    // Run Lighthouse
     const runnerResult = await lighthouse(url, {
       port,
       output: 'json',
@@ -82,14 +80,12 @@ export const runLighthouseAnalysis = async (
       extends: 'lighthouse:default',
     });
 
-    // Check if lighthouse run was successful
     if (!runnerResult || !runnerResult.lhr) {
       throw new Error('Lighthouse analysis failed - no results returned');
     }
 
     const lhr = runnerResult.lhr as LighthouseResult;
 
-    // Extract scores (0-100 scale)
     const scores = {
       performance: Math.round((lhr.categories.performance?.score || 0) * 100),
       accessibility: Math.round((lhr.categories.accessibility?.score || 0) * 100),
@@ -98,7 +94,6 @@ export const runLighthouseAnalysis = async (
       pwa: Math.round((lhr.categories.pwa?.score || 0) * 100),
     };
 
-    // Extract key metrics
     const metrics = {
       firstContentfulPaint: lhr.audits['first-contentful-paint']?.numericValue,
       largestContentfulPaint: lhr.audits['largest-contentful-paint']?.numericValue,
@@ -108,7 +103,6 @@ export const runLighthouseAnalysis = async (
       timeToInteractive: lhr.audits['interactive']?.numericValue,
     };
 
-    // Extract opportunities (performance improvements)
     const opportunities = Object.values(lhr.audits)
       .filter((audit): audit is LighthouseAudit => 
         audit !== null &&
@@ -126,7 +120,6 @@ export const runLighthouseAnalysis = async (
       }))
       .sort((a, b) => a.score - b.score);
 
-    // Extract diagnostics
     const diagnostics = Object.values(lhr.audits)
       .filter((audit): audit is LighthouseAudit => 
         audit !== null &&
@@ -149,8 +142,8 @@ export const runLighthouseAnalysis = async (
       url: lhr.finalUrl,
       ...scores,
       metrics,
-      opportunities: opportunities.slice(0, 10), // Top 10 opportunities
-      diagnostics: diagnostics.slice(0, 10), // Top 10 diagnostics
+      opportunities: opportunities.slice(0, 10), 
+      diagnostics: diagnostics.slice(0, 10), 
       rawReport: lhr,
     };
   } catch (error) {
@@ -211,7 +204,6 @@ export const generateSeoInsights = (report: Partial<LighthouseReport>) => {
     });
   }
 
-  // Analyze metrics
   if (report.metrics) {
     if (report.metrics.largestContentfulPaint && report.metrics.largestContentfulPaint > 2500) {
       insights.push({

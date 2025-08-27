@@ -13,7 +13,6 @@ import type {
 
 type AuthContext = Context<{ Variables: Variables }>;
 
-// Analyze a website
 export const analyzeWebsite = async (c: AuthContext) => {
   try {
     const auth = c.get('auth');
@@ -21,7 +20,6 @@ export const analyzeWebsite = async (c: AuthContext) => {
 
     const data = getValidatedData<AnalyzeWebsiteInput>(c);
     
-    // If websiteId provided, verify ownership
     if (data.websiteId) {
       const website = await websiteRepository.getWebsiteById(data.websiteId, auth.userId);
       if (!website) {
@@ -29,13 +27,10 @@ export const analyzeWebsite = async (c: AuthContext) => {
       }
     }
 
-    // Run analysis
     const report = await runLighthouseAnalysis(data.url);
     
-    // Generate SEO insights
     const insights = generateSeoInsights(report);
 
-    // Save report if website exists
     let savedReport = null;
     if (data.websiteId) {
       savedReport = await lighthouseRepository.saveReport({
@@ -49,7 +44,7 @@ export const analyzeWebsite = async (c: AuthContext) => {
     return success(c, {
       report: {
         ...report,
-        rawReport: undefined, //
+        rawReport: undefined, 
       },
       insights,
       saved: !!savedReport,
@@ -94,7 +89,6 @@ export const getWebsiteReports = async (c: AuthContext) => {
     const websiteId = c.req.param('websiteId');
     const query = getValidatedData<GetReportsQuery>(c);
 
-    // Verify website ownership
     const website = await websiteRepository.getWebsiteById(websiteId, auth.userId);
     if (!website) {
       return notFound(c, 'Website not found');

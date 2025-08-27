@@ -5,12 +5,11 @@ import { errorHandler } from '@/middleware/error.middleware.js';
 import { healthCheck } from '@/handlers/auth.handler.js';
 import type { Variables } from '@/types/index.js';
 
-// Create main app
 const app = new Hono<{ Variables: Variables }>()
   .use('*', cors({
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3000'],
+    origin: [process.env.FRONTEND_URL || 'https://my-turbo-app.vercel.app/'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
     credentials: true,
   }))
   .get('/', (c) => c.json({
@@ -21,10 +20,8 @@ const app = new Hono<{ Variables: Variables }>()
   }))
   .get('/health', healthCheck);
 
-// CRITICAL: Chain the API routes properly for type inference
 const apiApp = app.route('/api', routes);
 
-// Add error handlers
 apiApp.onError(errorHandler);
 apiApp.notFound((c) => {
   return c.json({
@@ -34,6 +31,5 @@ apiApp.notFound((c) => {
   }, 404);
 });
 
-// Export the FINAL chained app type
 export type AppType = typeof apiApp;
 export default app;

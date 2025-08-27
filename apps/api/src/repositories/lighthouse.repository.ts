@@ -2,7 +2,6 @@ import { sql, eq, and, desc, asc } from 'drizzle-orm';
 import { db } from '@/database.js';
 import { websites, reports } from '@/db/schema.js';
 
-// Report operations
 export const saveReport = async (data: {
   websiteId: string;
   userId: string;
@@ -37,7 +36,6 @@ export const saveReport = async (data: {
     createdAt: now,
   });
 
-  // Update website's last analyzed timestamp
   await db
     .update(websites)
     .set({
@@ -100,7 +98,7 @@ export const getWebsiteReports = async (
     metrics: report.metrics ? JSON.parse(report.metrics) : null,
     opportunities: report.opportunities ? JSON.parse(report.opportunities) : null,
     diagnostics: report.diagnostics ? JSON.parse(report.diagnostics) : null,
-    rawReport: null, // Don't include raw report in list
+    rawReport: null, 
   }));
 };
 

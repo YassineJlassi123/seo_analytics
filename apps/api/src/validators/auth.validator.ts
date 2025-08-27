@@ -153,7 +153,6 @@ export const webhookSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-// User roles and permissions
 export const roleSchema = z.enum(['admin', 'user', 'guest']);
 
 export const permissionSchema = z.enum([
@@ -228,7 +227,6 @@ export const getAuditLogsQuerySchema = z.object({
   offset: z.coerce.number().min(0).default(0),
 });
 
-// Response schemas (for documentation/validation)
 export const userResponseSchema = z.object({
   id: uuidSchema,
   email: emailSchema,
@@ -267,7 +265,6 @@ export const apiKeyResponseSchema = z.object({
   isActive: z.boolean(),
 });
 
-// Type exports
 export type UserProfile = z.infer<typeof userProfileSchema>;
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export type CreateApiKey = z.infer<typeof createApiKeySchema>;

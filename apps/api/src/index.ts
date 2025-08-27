@@ -2,11 +2,10 @@ import { serve } from '@hono/node-server';
 import app from '@/app.js';
 import { env } from '@/config/env.js';
 import { logger } from '@/utils/logger.js';
-import '@/services/queue.service.js'; // This will initialize and start the BullMQ worker 
+import '@/services/queue.service.js'; 
 
 const port = parseInt(env.PORT);
 
-// Start server
 const server = serve({
   fetch: app.fetch,
   port,
@@ -17,18 +16,16 @@ const server = serve({
   logger.info(`🌍 Environment: ${env.NODE_ENV}`);
 });
 
-// Graceful shutdown
 const gracefulShutdown = async (signal: string) => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
   
   try {
-    // The BullMQ worker will disconnect gracefully
+   
     server.close(() => {
       logger.info('Server closed');
       process.exit(0);
     });
     
-    // Force exit after 10 seconds
     setTimeout(() => {
       logger.error('Forced shutdown after timeout');
       process.exit(1);
@@ -39,11 +36,9 @@ const gracefulShutdown = async (signal: string) => {
   }
 };
 
-// Handle shutdown signals
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Handle uncaught errors
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught Exception:', err);
   process.exit(1);

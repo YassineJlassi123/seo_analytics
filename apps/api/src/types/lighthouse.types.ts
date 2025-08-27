@@ -123,7 +123,6 @@ export interface LighthouseError extends Error {
   lhrRuntimeError?: boolean;
 }
 
-// Core Web Vitals thresholds
 export const CORE_WEB_VITALS_THRESHOLDS = {
   LCP: {
     GOOD: 2500,
@@ -155,13 +154,11 @@ export const CORE_WEB_VITALS_THRESHOLDS = {
   },
 } as const;
 
-// Performance scoring thresholds
 export const LIGHTHOUSE_SCORE_THRESHOLDS = {
   GOOD: 90,
   NEEDS_IMPROVEMENT: 50,
 } as const;
 
-// Common device configurations
 export const DEVICE_CONFIGS = {
   desktop: {
     formFactor: 'desktop' as const,

@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 export const uuidSchema = z.string().uuid('Invalid UUID format');
 
-// URL validation with protocol check
 export const urlSchema = z.string()
   .url('Invalid URL format')
   .refine(url => {
@@ -17,7 +16,6 @@ export const urlSchema = z.string()
   .refine(url => {
     try {
       const parsed = new URL(url);
-      // Reject localhost/internal URLs in production
       if (process.env.NODE_ENV === 'production') {
         const hostname = parsed.hostname.toLowerCase();
         return !hostname.includes('localhost') && 
@@ -33,12 +31,10 @@ export const urlSchema = z.string()
     }
   }, 'Invalid URL - internal/localhost URLs not allowed in production');
 
-// Email validation
 export const emailSchema = z.string()
   .email('Invalid email format')
   .max(255, 'Email must be less than 255 characters');
 
-// Text validation with length limits
 export const shortTextSchema = z.string()
   .min(1, 'Field is required')
   .max(255, 'Text must be less than 255 characters')
@@ -54,12 +50,10 @@ export const longTextSchema = z.string()
   .max(5000, 'Text must be less than 5000 characters')
   .trim();
 
-// Optional text fields
 export const optionalShortTextSchema = shortTextSchema.optional();
 export const optionalMediumTextSchema = mediumTextSchema.optional();
 export const optionalLongTextSchema = longTextSchema.optional();
 
-// Pagination schemas
 export const paginationSchema = z.object({
   limit: z.coerce.number()
     .min(1, 'Limit must be at least 1')
@@ -88,7 +82,6 @@ export const dateRangeSchema = z.object({
   'Start date must be before or equal to end date'
 );
 
-// Boolean coercion (for query parameters)
 export const booleanSchema = z.union([
   z.boolean(),
   z.string().transform(val => val === 'true'),
@@ -190,16 +183,13 @@ export const errorResponseSchema = z.object({
   details: z.any().optional(),
 });
 
-// Helper function to create enum from array
 export const createEnumSchema = <T extends readonly [string, ...string[]]>(values: T) =>
   z.enum(values);
 
-// Helper function to create optional field with default
 export const optionalWithDefault = <T>(schema: z.ZodType<T>, defaultValue: Exclude<T, undefined>) =>
   schema.optional().default(defaultValue);
 
 
-// Type exports for commonly used schemas
 export type UUID = z.infer<typeof uuidSchema>;
 export type URL = z.infer<typeof urlSchema>;
 export type Email = z.infer<typeof emailSchema>;

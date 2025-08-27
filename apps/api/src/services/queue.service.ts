@@ -16,10 +16,10 @@ const ANALYSIS_QUEUE_NAME = 'lighthouse-analysis';
 export const analysisQueue = new Queue<AnalysisJobData>(ANALYSIS_QUEUE_NAME, {
   connection,
   defaultJobOptions: {
-    attempts: 3, // Retry failed jobs 3 times
+    attempts: 3, 
     backoff: {
       type: 'exponential',
-      delay: 10000, // Start with a 10-second delay
+      delay: 10000,
     },
   },
 });
@@ -60,7 +60,6 @@ const worker = new Worker<AnalysisJobData>(
     try {
       const report = await runLighthouseAnalysis(url);
       
-      // Use the existing saveReport function
       await db.saveReport({
         websiteId,
         userId,
