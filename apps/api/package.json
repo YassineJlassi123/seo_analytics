@@ -19,7 +19,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc --build",
-    "postinstall": "npm run install-chrome",
+    "postinstall": "PUPPETEER_DOWNLOAD_BASE_URL=https://storage.googleapis.com/chrome-for-testing-public npx puppeteer browsers install chrome && echo 'Chrome installed successfully' || (echo 'Chrome install via puppeteer failed, trying system install...' && npm run install-chrome-system)",
     "install-chrome": "npx puppeteer browsers install chrome && echo 'Chrome installed successfully' || (echo 'Chrome install via puppeteer failed, trying system install...' && npm run install-chrome-system)",
     "install-chrome-system": "apt-get update && apt-get install -y google-chrome-stable || echo 'System Chrome install failed - will try runtime detection'",
     "clean": "rimraf dist .tsbuildinfo",
@@ -43,6 +43,7 @@
     "chrome-launcher": "latest",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.5",
+    "glob": "^11.0.3",
     "hono": "4.9.4",
     "ioredis": "^5.7.0",
     "lighthouse": "latest",
@@ -52,9 +53,9 @@
     "postgres": "^3.4.7",
     "puppeteer": "^24.17.0",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.20.5",
     "winston": "latest",
-    "zod": "latest",
-    "tsx": "^4.20.5"
+    "zod": "latest"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

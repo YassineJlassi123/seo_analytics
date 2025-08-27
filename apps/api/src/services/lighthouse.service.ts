@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer';
 import lighthouse from 'lighthouse';
 import { execSync } from 'child_process';
+import fs from 'fs';
+import { glob } from 'glob';
 import type { LighthouseReport } from '@/types/index.js';
 
 export interface LighthouseOptions {
@@ -54,8 +56,6 @@ const defaultOptions: LighthouseOptions = {
 
 // Enhanced Chrome executable detection with verification
 const getChromeExecutablePath = () => {
-  const fs = require('fs');
-  
   // First try to use which/whereis commands to find Chrome
   const commands = [
     'which google-chrome-stable',
@@ -145,8 +145,7 @@ const getChromeExecutablePath = () => {
     if (pathPattern.includes('*')) {
       // Handle glob patterns
       try {
-        const globSync = require('glob').sync || require('glob');
-        const matches = globSync(pathPattern);
+        const matches = glob.sync(pathPattern);
         for (const match of matches) {
           if (fs.existsSync(match)) {
             try {
