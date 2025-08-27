@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "outDir": "test_dist",
-    "rootDir": "src",
-    "module": "commonjs",
+    "outDir": "dist",
+    "module": "NodeNext",
     "target": "es2021",
-    "declaration": true,
-    "noEmit": false
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/test.ts"]
+  "include": ["src/index.ts"]
 }

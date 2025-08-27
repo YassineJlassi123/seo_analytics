@@ -1,4 +1,5 @@
 {
+  "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "composite": true,
@@ -11,18 +12,29 @@
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
-    "isolatedModules": true,
+    "isolatedModules": true, 
     "moduleDetection": "force",
     "moduleResolution": "NodeNext",
     "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
+    "allowJs": false, 
+    "sourceMap": true,  
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "src/routes.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"  
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",  
+    "**/*.test.ts",  
+    "**/*.spec.ts"   
+  ]
 }
