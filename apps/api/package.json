@@ -19,7 +19,9 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc --build",
-    "postinstall": "npx puppeteer browsers install chrome || echo 'Chrome install failed, will try fallback paths'",
+    "postinstall": "npm run install-chrome",
+    "install-chrome": "npx puppeteer browsers install chrome && echo 'Chrome installed successfully' || (echo 'Chrome install via puppeteer failed, trying system install...' && npm run install-chrome-system)",
+    "install-chrome-system": "apt-get update && apt-get install -y google-chrome-stable || echo 'System Chrome install failed - will try runtime detection'",
     "clean": "rimraf dist .tsbuildinfo",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
@@ -52,7 +54,7 @@
     "tsconfig-paths": "^4.2.0",
     "winston": "latest",
     "zod": "latest",
-     "tsx": "^4.20.5"
+    "tsx": "^4.20.5"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
