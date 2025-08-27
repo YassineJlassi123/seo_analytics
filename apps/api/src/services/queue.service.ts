@@ -1,4 +1,3 @@
-
 import { Queue, Worker, Job } from 'bullmq';
 import { connection } from '@/config/redis.js';
 import { runLighthouseAnalysis } from './lighthouse.service.js';
@@ -16,7 +15,7 @@ const ANALYSIS_QUEUE_NAME = 'lighthouse-analysis';
 export const analysisQueue = new Queue<AnalysisJobData>(ANALYSIS_QUEUE_NAME, {
   connection,
   defaultJobOptions: {
-    attempts: 3, 
+    attempts: 3,
     backoff: {
       type: 'exponential',
       delay: 10000,
@@ -41,7 +40,7 @@ export const scheduleAnalysis = async (websiteId: string, userId: string, url: s
 export const removeScheduledAnalysis = async (websiteId: string) => {
   const jobId = `website:${websiteId}`;
   const repeatableJobs = await analysisQueue.getRepeatableJobs();
-  const jobToRemove = repeatableJobs.find(job => job.id === jobId);
+  const jobToRemove = repeatableJobs.find((job) => job.id === jobId);
 
   if (jobToRemove) {
     await analysisQueue.removeRepeatableByKey(jobToRemove.key);
@@ -55,33 +54,42 @@ const worker = new Worker<AnalysisJobData>(
   ANALYSIS_QUEUE_NAME,
   async (job: Job<AnalysisJobData>) => {
     const { websiteId, userId, url } = job.data;
-    logger.info(`Starting analysis for ${url} (Job ID: ${job.id})`);
+    if (!websiteId) {
+      logger.warn(`Job ${job.id} is missing a websiteId.`);
+      return;
+    }
+
+    logger.info(`Starting scheduled analysis for ${url} (Job ID: ${job.id})`);
 
     try {
       const report = await runLighthouseAnalysis(url);
-      
+
       await db.saveReport({
         websiteId,
         userId,
         url,
-        performance: report.performance,
-        accessibility: report.accessibility,
-        bestPractices: report.bestPractices,
-        seo: report.seo,
-        pwa: report.pwa,
-        metrics: report.metrics,
-        opportunities: report.opportunities,
-        diagnostics: report.diagnostics,
-        rawReport: report.rawReport,
+        ...report,
       });
 
       logger.info(`Successfully completed analysis for ${url} (Job ID: ${job.id})`);
     } catch (error) {
-      logger.error(`Analysis failed for ${url} (Job ID: ${job.id}):`, error);
-      throw error; 
+      if (error instanceof Error) {
+        logger.error(`Analysis failed for ${url} (Job ID: ${job.id}): ${error.message}`, {
+          stack: error.stack,
+        });
+      } else {
+        logger.error(
+          `Analysis failed for ${url} (Job ID: ${job.id}) with an unknown error:`,
+          error
+        );
+      }
+      throw error;
     }
   },
-  { connection }
+  {
+    connection,
+    concurrency: 1, 
+  }
 );
 
 worker.on('completed', (job: Job) => {
@@ -90,7 +98,15 @@ worker.on('completed', (job: Job) => {
 
 worker.on('failed', (job: Job | undefined, err: Error) => {
   if (job) {
-    logger.error(`Job ${job.id} has failed with error: ${err.message}`);
+    logger.error(`Job ${job.id} has failed.`, {
+      error: err.message,
+      stack: err.stack,
+    });
+  } else {
+    logger.error('An unknown job failed.', {
+      error: err.message,
+      stack: err.stack,
+    });
   }
 });
 

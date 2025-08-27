@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { createWebsite } from '@/services/website.service';
 
 export default function AddWebsitePage() {
   const router = useRouter();
   const { getToken } = useAuth();
+  const searchParams = useSearchParams();
 
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
-  const [cron, setCron] = useState('');
-  const [predefinedSchedule, setPredefinedSchedule] = useState('manual');
+  const [cron, setCron] = useState('* * * * *'); // Default to every minute
+  const [predefinedSchedule, setPredefinedSchedule] = useState('every_minute'); // Default to every minute
+
+  useEffect(() => {
+    const urlFromQuery = searchParams.get('url');
+    if (urlFromQuery) {
+      setUrl(urlFromQuery);
+    }
+  }, [searchParams]);
 
   const handleScheduleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
@@ -112,25 +120,13 @@ export default function AddWebsitePage() {
               className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               value={predefinedSchedule}
               onChange={handleScheduleChange}
-            >              <option value="every_minute">Every Minute</option>
+            >
+              <option value="every_minute">Every Minute</option>
               <option value="hourly">Hourly</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
             </select>
-          </div>
-
-          <div>
-            <label htmlFor="cron" className="text-sm font-medium text-gray-700">Cron Expression (Optional)</label>
-            <input
-              type="text"
-              id="cron"
-              className="mt-1 block w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              value={cron}
-              disabled
-              onChange={(e) => setCron(e.target.value)}
-              placeholder="* * * * *"
-            />
           </div>
 
           <button

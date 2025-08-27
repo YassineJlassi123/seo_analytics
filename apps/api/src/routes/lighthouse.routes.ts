@@ -8,6 +8,7 @@ import type { Variables } from '@/types/index.js';
 export const lighthouseRoutes = new Hono<{ Variables: Variables }>()
   .use('*', clerkAuth)
   .post('/analyze', validate(analyzeWebsiteSchema, 'json'), lighthouseHandler.analyzeWebsite)
+  
   .get('/reports', validate(getReportsSchema, 'query'), lighthouseHandler.getUserReports)
   .get('/reports/:id', lighthouseHandler.getReport)
   .get('/websites/:websiteId/reports', lighthouseHandler.getWebsiteReports)

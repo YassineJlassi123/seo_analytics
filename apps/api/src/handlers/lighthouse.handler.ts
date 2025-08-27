@@ -1,15 +1,11 @@
 import type { Context } from 'hono';
-import { runLighthouseAnalysis, generateSeoInsights } from '../services/lighthouse.service.js';
+import { runLighthouseAnalysis, generateSeoInsights } from '@/services/lighthouse.service.js';
 import * as websiteRepository from '@/repositories/website.repository.js';
 import * as lighthouseRepository from '@/repositories/lighthouse.repository.js';
 import { success, error, notFound } from '@/utils/response.js';
 import { getValidatedData } from '@/middleware/validation.middleware.js';
 import type { Variables } from '@/types/index.js';
-import type { 
-  AnalyzeWebsiteInput,
-  GetReportsQuery 
-} from '@/validators/lighthouse.validator.js';
-
+import type { AnalyzeWebsiteInput, GetReportsQuery } from '@/validators/lighthouse.validator.js';
 
 type AuthContext = Context<{ Variables: Variables }>;
 
@@ -19,38 +15,28 @@ export const analyzeWebsite = async (c: AuthContext) => {
     if (!auth) return error(c, 'Unauthorized', 401);
 
     const data = getValidatedData<AnalyzeWebsiteInput>(c);
-    
-    if (data.websiteId) {
-      const website = await websiteRepository.getWebsiteById(data.websiteId, auth.userId);
-      if (!website) {
-        return notFound(c, 'Website not found');
-      }
-    }
 
-    const report = await runLighthouseAnalysis(data.url);
-    
+    // For immediate analysis, run a limited, faster set of audits
+    const report = await runLighthouseAnalysis(data.url, {
+      onlyCategories: ['seo'],
+    });
+
     const insights = generateSeoInsights(report);
 
-    let savedReport = null;
-    if (data.websiteId) {
-      savedReport = await lighthouseRepository.saveReport({
-        websiteId: data.websiteId,
-        userId: auth.userId,
-        url: data.url,
-        ...report,
-      });
-    }
-
-    return success(c, {
-      report: {
-        ...report,
-        rawReport: undefined, 
+    return success(
+      c,
+      {
+        report: {
+          ...report,
+          rawReport: undefined, // Don't send full raw report to client
+        },
+        insights,
+        saved: false, // This was an on-the-fly analysis, so it's not saved
       },
-      insights,
-      saved: !!savedReport,
-      reportId: savedReport?.id,
-    }, 'Analysis completed successfully');
+      'Analysis completed successfully'
+    );
   } catch (err) {
+    console.error('Immediate analysis failed:', err);
     return error(c, 'Analysis failed', 500);
   }
 };

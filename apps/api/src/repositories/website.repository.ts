@@ -58,10 +58,8 @@ export const updateWebsite = async (
 };
 
 export const deleteWebsite = async (id: string, userId: string) => {
-  // Delete associated reports first
   await db.delete(reports).where(eq(reports.websiteId, id));
 
-  // Delete website
   await db
     .delete(websites)
     .where(and(eq(websites.id, id), eq(websites.userId, userId)));

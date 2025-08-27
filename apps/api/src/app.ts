@@ -24,6 +24,7 @@ const apiApp = app.route('/api', routes);
 
 apiApp.onError(errorHandler);
 apiApp.notFound((c) => {
+  console.error(`NOT FOUND: ${c.req.path}`);
   return c.json({
     success: false,
     message: 'Route not found',
