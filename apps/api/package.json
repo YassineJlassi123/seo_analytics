@@ -19,7 +19,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc --build",
-    "postinstall": "PUPPETEER_DOWNLOAD_BASE_URL=https://storage.googleapis.com/chrome-for-testing-public npx puppeteer browsers install chrome && echo 'Chrome installed successfully' || (echo 'Chrome install via puppeteer failed, trying system install...' && npm run install-chrome-system)",
+"postinstall": "npx puppeteer browsers install chrome || echo 'Chrome install failed, will try system path detection'",
     "install-chrome": "npx puppeteer browsers install chrome && echo 'Chrome installed successfully' || (echo 'Chrome install via puppeteer failed, trying system install...' && npm run install-chrome-system)",
     "install-chrome-system": "apt-get update && apt-get install -y google-chrome-stable || echo 'System Chrome install failed - will try runtime detection'",
     "clean": "rimraf dist .tsbuildinfo",
