@@ -1,11 +1,11 @@
-'use client';
+import React from 'react';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { useAuth } from '@clerk/nextjs';
+const WebsitePage = () => {
+  return (
+    <div>
+      <h1>Website Page</h1>
+    </div>
+  );
+};
 
-export default function WebsiteDetailsPage() {
-
-}
+export default WebsitePage;

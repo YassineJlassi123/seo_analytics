@@ -1,2 +1,1 @@
-export type { AppType } from '../../apps/api/src/app';
-
+export type { AppType } from '../../apps/api/dist/app.js';

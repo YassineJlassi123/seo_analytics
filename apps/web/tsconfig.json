@@ -10,12 +10,11 @@
     "incremental": true,
     "composite": true,
     "noEmit": false,
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-       "api": ["../api/src"],
-      "api/*": ["../api/src/*"]
+      ]
     }
   },
   "include": [
@@ -26,10 +25,9 @@
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
-  "references": [
-    { "path": "../api" }
-  ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "../api/**/*",
+    "../../packages/api-types/node_modules"
   ]
 }

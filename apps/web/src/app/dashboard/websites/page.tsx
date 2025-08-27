@@ -25,7 +25,7 @@ export default function WebsitesPage() {
         setLoading(true);
         const response = await getUserWebsites(token);
         setWebsites(response);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch websites.');
       } finally {
         setLoading(false);

@@ -1,7 +1,5 @@
 import { hc } from 'hono/client';
-import type { AppType } from 'api';
-import { InferResponseType } from 'hono/client';
-
+import type { AppType } from '@repo/api-types';
 const getApiUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 };

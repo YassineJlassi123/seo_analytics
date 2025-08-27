@@ -18,7 +18,6 @@
     "@repo/api-types": "workspace:*"
   },
   "devDependencies": {
-    "api": "workspace:*",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

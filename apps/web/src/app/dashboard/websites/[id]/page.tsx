@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,11 +5,38 @@ import { useAuth } from '@clerk/nextjs';
 import { getWebsiteById, WebsiteWithReportsType } from '@/services/website.service';
 import ScoreChart from '@/components/ScoreChart';
 
-export default function WebsiteDetailPage({ params }: { params: { id: string } }) {
+// Define the Report type based on the actual structure from WebsiteWithReportsType
+interface Report {
+  metrics: Record<string, unknown>;
+  opportunities: Array<Record<string, unknown>>;
+  diagnostics: Array<Record<string, unknown>>;
+  rawReport: null;
+  id: string;
+  websiteId: string;
+  userId: string;
+  url: string;
+  performance: number | null;
+  accessibility: number | null;
+  bestPractices: number | null;
+  seo: number | null;
+  pwa: number | null;
+  createdAt: string;
+}
+
+export default function WebsiteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [data, setData] = useState<WebsiteWithReportsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [websiteId, setWebsiteId] = useState<string | null>(null);
   const { getToken } = useAuth();
+
+  useEffect(() => {
+    const resolveParams = async () => {
+      const resolvedParams = await params;
+      setWebsiteId(resolvedParams.id);
+    };
+    resolveParams();
+  }, [params]);
 
   useEffect(() => {
     const fetchWebsite = async () => {
@@ -21,21 +47,23 @@ export default function WebsiteDetailPage({ params }: { params: { id: string } }
         return;
       }
 
+      if (!websiteId) return;
+
       try {
         setLoading(true);
-        const response = await getWebsiteById(token, params.id);
+        const response = await getWebsiteById(token, websiteId);
         setData(response);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch website details.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (params.id) {
+    if (websiteId) {
       fetchWebsite();
     }
-  }, [getToken, params.id]);
+  }, [getToken, websiteId]);
 
   if (loading) {
     return <div>Loading website details...</div>;
@@ -85,15 +113,15 @@ export default function WebsiteDetailPage({ params }: { params: { id: string } }
               </tr>
             </thead>
             <tbody>
-              {recentReports && recentReports.map((report) => (
+              {recentReports && recentReports.map((report: Report) => (
                 <tr key={report.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                   <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                     {new Date(report.createdAt).toLocaleString()}
                   </th>
-                  <td className="px-6 py-4">{report.performance}</td>
-                  <td className="px-6 py-4">{report.accessibility}</td>
-                  <td className="px-6 py-4">{report.bestPractices}</td>
-                  <td className="px-6 py-4">{report.seo}</td>
+                  <td className="px-6 py-4">{report.performance ?? 'N/A'}</td>
+                  <td className="px-6 py-4">{report.accessibility ?? 'N/A'}</td>
+                  <td className="px-6 py-4">{report.bestPractices ?? 'N/A'}</td>
+                  <td className="px-6 py-4">{report.seo ?? 'N/A'}</td>
                 </tr>
               ))}
             </tbody>

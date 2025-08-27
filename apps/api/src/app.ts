@@ -8,7 +8,7 @@ import type { Variables } from '@/types/index.js';
 // Create main app
 const app = new Hono<{ Variables: Variables }>()
   .use('*', cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: [process.env.FRONTEND_URL || 'http://localhost:3000'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
