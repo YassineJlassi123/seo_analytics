@@ -51,6 +51,21 @@ const defaultOptions: LighthouseOptions = {
   retries: 2
 };
 
+// Helper to get Chrome executable path for production
+const getChromeExecutablePath = () => {
+  // Try common production paths
+  const possiblePaths = [
+    process.env.PUPPETEER_EXECUTABLE_PATH,
+    process.env.GOOGLE_CHROME_BIN,
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+  ];
+
+  return possiblePaths.find(path => path) || undefined;
+};
+
 const clearPerformanceMarks = () => {
   try {
     if (typeof globalThis !== 'undefined' && globalThis.performance) {
@@ -66,6 +81,7 @@ const clearPerformanceMarks = () => {
       performance.clearMeasures?.();
     }
   } catch (error) {
+    // Silently ignore
   }
 };
 
@@ -95,7 +111,9 @@ export const runLighthouseAnalysis = async (
     
     try {
       await forceCleanPerformance();
-      browser = await puppeteer.launch({
+      
+      // Enhanced browser configuration for production
+      const browserOptions = {
         headless: true,
         args: [
           '--no-sandbox',
@@ -121,13 +139,33 @@ export const runLighthouseAnalysis = async (
           '--disable-web-security',
           '--disable-features=VizDisplayCompositor',
           '--disable-component-extensions-with-background-pages',
+          // Additional production flags
+          '--disable-software-rasterizer',
+          '--disable-default-apps',
+          '--hide-scrollbars',
+          '--mute-audio',
+          '--no-default-browser-check',
+          '--no-pings',
+          '--disable-crash-reporter',
+          '--disable-logging',
         ],
         timeout: 120000,
         protocolTimeout: 120000,
         handleSIGINT: false,
         handleSIGTERM: false,
         handleSIGHUP: false,
+        // Set executable path for production
+        ...(process.env.NODE_ENV === 'production' && {
+          executablePath: getChromeExecutablePath()
+        })
+      };
+
+      console.log('Launching browser with options:', {
+        executablePath: browserOptions.executablePath,
+        isProduction: process.env.NODE_ENV === 'production'
       });
+
+      browser = await puppeteer.launch(browserOptions);
 
       await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -244,6 +282,16 @@ export const runLighthouseAnalysis = async (
       
       console.warn(`Attempt ${attempt + 1} failed:`, lastError.message);
       
+      // Enhanced error logging for Chrome issues
+      if (lastError.message.includes('Could not find Chrome')) {
+        console.error('Chrome executable paths tried:', {
+          PUPPETEER_EXECUTABLE_PATH: process.env.PUPPETEER_EXECUTABLE_PATH,
+          GOOGLE_CHROME_BIN: process.env.GOOGLE_CHROME_BIN,
+          detectedPath: getChromeExecutablePath(),
+          nodeEnv: process.env.NODE_ENV
+        });
+      }
+      
       if (attempt < (mergedOptions.retries || 0)) {
         const delay = (2000 * Math.pow(2, attempt)) + Math.random() * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -265,6 +313,15 @@ export const runLighthouseAnalysis = async (
   }
 
   if (lastError) {
+    // Enhanced error messages
+    if (lastError.message.includes('Could not find Chrome')) {
+      throw new Error(
+        `Chrome browser not found after ${mergedOptions.retries! + 1} attempts. ` +
+        `Make sure Chrome is installed in production. ` +
+        `Try adding 'npx puppeteer browsers install chrome' to your build script.`
+      );
+    }
+    
     if (lastError.name === 'TargetCloseError') {
       throw new Error(
         `The page crashed during analysis after ${mergedOptions.retries! + 1} attempts. This can happen on complex websites or due to memory constraints.`

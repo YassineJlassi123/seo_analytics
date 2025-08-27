@@ -19,6 +19,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "build": "tsc --build",
+    "postinstall": "npx puppeteer browsers install chrome || echo 'Chrome install failed, will try fallback paths'",
     "clean": "rimraf dist .tsbuildinfo",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",

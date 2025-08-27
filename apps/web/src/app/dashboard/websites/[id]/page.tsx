@@ -5,7 +5,6 @@ import { useAuth } from '@clerk/nextjs';
 import { getWebsiteById, WebsiteWithReportsType } from '@/services/website.service';
 import ScoreChart from '@/components/ScoreChart';
 
-// Define the Report type based on the actual structure from WebsiteWithReportsType
 interface Report {
   metrics: Record<string, unknown>;
   opportunities: Array<Record<string, unknown>>;

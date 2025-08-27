@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { createWebsite } from '@/services/website.service';
 
-export default function AddWebsitePage() {
+function AddWebsiteForm() {
   const router = useRouter();
   const { getToken } = useAuth();
   const searchParams = useSearchParams();
 
   const [url, setUrl] = useState('');
   const [name, setName] = useState('');
-  const [cron, setCron] = useState('* * * * *'); // Default to every minute
-  const [predefinedSchedule, setPredefinedSchedule] = useState('every_minute'); // Default to every minute
+  const [cron, setCron] = useState('* * * * *'); 
+  const [predefinedSchedule, setPredefinedSchedule] = useState('every_minute'); 
 
   useEffect(() => {
     const urlFromQuery = searchParams.get('url');
@@ -139,5 +139,19 @@ export default function AddWebsitePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AddWebsitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
+          <div className="text-center">Loading...</div>
+        </div>
+      </div>
+    }>
+      <AddWebsiteForm />
+    </Suspense>
   );
 }
