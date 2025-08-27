@@ -51,7 +51,8 @@
     "puppeteer": "^24.17.0",
     "tsconfig-paths": "^4.2.0",
     "winston": "latest",
-    "zod": "latest"
+    "zod": "latest",
+     "tsx": "^4.20.5"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
