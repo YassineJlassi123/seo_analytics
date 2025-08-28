@@ -1,11 +1,13 @@
 import type { Context } from 'hono';
-import { runLighthouseAnalysis, generateSeoInsights } from '@/services/lighthouse.service.js';
+import { requestOnDemandAnalysis } from '@/services/queue.service.js';
+import { generateSeoInsights } from '@/services/lighthouse.service.js';
 import * as websiteRepository from '@/repositories/website.repository.js';
 import * as lighthouseRepository from '@/repositories/lighthouse.repository.js';
-import { success, error, notFound } from '@/utils/response.js';
+import { success, error, notFound, accepted } from '@/utils/response.js';
 import { getValidatedData } from '@/middleware/validation.middleware.js';
 import type { Variables } from '@/types/index.js';
 import type { AnalyzeWebsiteInput, GetReportsQuery } from '@/validators/lighthouse.validator.js';
+import { connection } from '@/config/redis.js';
 
 type AuthContext = Context<{ Variables: Variables }>;
 
@@ -16,28 +18,41 @@ export const analyzeWebsite = async (c: AuthContext) => {
 
     const data = getValidatedData<AnalyzeWebsiteInput>(c);
 
-    // For immediate analysis, run a limited, faster set of audits
-    const report = await runLighthouseAnalysis(data.url, {
-      onlyCategories: ['seo'],
-    });
+    const job = await requestOnDemandAnalysis(data.url);
 
-    const insights = generateSeoInsights(report);
+    return success(c, { jobId: job.id }, 'Analysis job created successfully');
 
-    return success(
-      c,
-      {
-        report: {
-          ...report,
-          rawReport: undefined, // Don't send full raw report to client
-        },
-        insights,
-        saved: false, // This was an on-the-fly analysis, so it's not saved
-      },
-      'Analysis completed successfully'
-    );
   } catch (err) {
-    console.error('Immediate analysis failed:', err);
-    return error(c, 'Analysis failed', 500);
+    console.error('Failed to create on-demand analysis job:', err);
+    return error(c, 'Failed to start analysis', 500);
+  }
+};
+
+export const getAnalysisResult = async (c: AuthContext) => {
+  try {
+    const auth = c.get('auth');
+    if (!auth) return error(c, 'Unauthorized', 401);
+
+    const jobId = c.req.param('jobId');
+    const resultKey = `result:${jobId}`;
+
+    const result = await connection.get(resultKey);
+
+    if (result) {
+      // Result is ready
+      await connection.del(resultKey); // Clean up the key
+      const data = JSON.parse(result);
+      if (data.error) {
+        return error(c, data.error, 500);
+      }
+      return success(c, data, 'Analysis complete');
+    } else {
+      // Result not ready yet
+      return accepted(c, 'Analysis is pending');
+    }
+  } catch (err) {
+    console.error('Failed to get analysis result:', err);
+    return error(c, 'Failed to retrieve analysis result', 500);
   }
 };
 

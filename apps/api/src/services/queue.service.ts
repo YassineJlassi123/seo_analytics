@@ -1,16 +1,22 @@
 import { Queue, Worker, Job } from 'bullmq';
+import { randomUUID } from 'crypto';
 import { connection } from '@/config/redis.js';
-import { runLighthouseAnalysis } from './lighthouse.service.js';
+import { runLighthouseAnalysis, generateSeoInsights } from './lighthouse.service.js';
 import * as db from '../repositories/lighthouse.repository.js';
 import { logger } from '@/utils/logger.js';
 
-export interface AnalysisJobData {
+
+export type AnalysisJobData = {
+  type: 'scheduled';
   websiteId: string;
   userId: string;
   url: string;
-}
+} | {
+  type: 'on-demand';
+  url: string;
+};
 
-const ANALYSIS_QUEUE_NAME = 'lighthouse-analysis';
+const ANALYSIS_QUEUE_NAME = 'seo-analysis-queue';
 
 export const analysisQueue = new Queue<AnalysisJobData>(ANALYSIS_QUEUE_NAME, {
   connection,
@@ -20,17 +26,17 @@ export const analysisQueue = new Queue<AnalysisJobData>(ANALYSIS_QUEUE_NAME, {
       type: 'exponential',
       delay: 10000,
     },
+    removeOnComplete: true,
+    removeOnFail: true,
   },
 });
 
+
 export const scheduleAnalysis = async (websiteId: string, userId: string, url: string, cron: string) => {
   const jobId = `website:${websiteId}`;
+  if (!cron) throw new Error(`Invalid cron expression: ${cron}`);
 
-  if (!cron) {
-    throw new Error(`Invalid cron expression: ${cron}`);
-  }
-
-  await analysisQueue.add(jobId, { websiteId, userId, url }, {
+  await analysisQueue.add(jobId, { type: 'scheduled', websiteId, userId, url }, {
     repeat: { pattern: cron },
     jobId,
   });
@@ -50,64 +56,88 @@ export const removeScheduledAnalysis = async (websiteId: string) => {
   }
 };
 
+export const requestOnDemandAnalysis = async (url: string) => {
+  const jobId = randomUUID();
+  const job = await analysisQueue.add('on-demand-analysis', { type: 'on-demand', url }, {
+    jobId,
+    priority: 1, // High priority
+  });
+  return job;
+};
+
+
 const worker = new Worker<AnalysisJobData>(
   ANALYSIS_QUEUE_NAME,
   async (job: Job<AnalysisJobData>) => {
-    const { websiteId, userId, url } = job.data;
-    if (!websiteId) {
-      logger.warn(`Job ${job.id} is missing a websiteId.`);
+    const { data } = job;
+
+    if (!data.type) {
+      logger.warn(`Skipping job ${job.id} with undefined type.`);
       return;
     }
 
-    logger.info(`Starting scheduled analysis for ${url} (Job ID: ${job.id})`);
+    const url = data.url;
+
+    logger.info(`Starting analysis for ${url} (Job ID: ${job.id}, Type: ${data.type}, Attempt: ${job.attemptsMade + 1})`);
 
     try {
       const report = await runLighthouseAnalysis(url);
 
-      await db.saveReport({
-        websiteId,
-        userId,
-        url,
-        ...report,
-      });
-
-      logger.info(`Successfully completed analysis for ${url} (Job ID: ${job.id})`);
-    } catch (error) {
-      if (error instanceof Error) {
-        logger.error(`Analysis failed for ${url} (Job ID: ${job.id}): ${error.message}`, {
-          stack: error.stack,
-        });
+      if (data.type === 'scheduled') {
+        await db.saveReport({ websiteId: data.websiteId, userId: data.userId, url, ...report });
+        logger.info(`Successfully completed scheduled analysis for ${url} (Job ID: ${job.id})`);
       } else {
-        logger.error(
-          `Analysis failed for ${url} (Job ID: ${job.id}) with an unknown error:`,
-          error
-        );
+        const insights = generateSeoInsights(report);
+        const result = {
+          report: {
+            ...report,
+            rawReport: undefined,
+          },
+          insights,
+          saved: false,
+        };
+        await connection.setex(`result:${job.id}`, 600, JSON.stringify(result));
+        logger.info(`Successfully completed on-demand analysis for ${url} (Job ID: ${job.id})`);
       }
-      throw error;
+    } catch (error) {
+      logger.error(`Analysis failed for ${url} (Job ID: ${job.id}, Type: ${data.type})`, { error });
+      throw error; 
     }
   },
   {
     connection,
-    concurrency: 1, 
+    concurrency: 1,
+    lockDuration: 300000, 
   }
 );
 
+
 worker.on('completed', (job: Job) => {
-  logger.info(`Job ${job.id} has completed.`);
+  logger.info(`Job ${job.id} in queue ${worker.name} has completed.`);
 });
 
-worker.on('failed', (job: Job | undefined, err: Error) => {
-  if (job) {
-    logger.error(`Job ${job.id} has failed.`, {
-      error: err.message,
-      stack: err.stack,
-    });
-  } else {
-    logger.error('An unknown job failed.', {
-      error: err.message,
-      stack: err.stack,
-    });
+worker.on('failed', async (job: Job | undefined, err: Error) => {
+  try {
+    if (job && job.data.type === 'on-demand') {
+      logger.error(`Job ${job.id} has failed all attempts. Caching final error for frontend.`);
+      const errorResult = { error: `Analysis failed after ${job.opts.attempts} attempts: ${err.message}` };
+      await connection.setex(`result:${job.id}`, 600, JSON.stringify(errorResult));
+    } else if (job) {
+      logger.error(`Job ${job.id} in queue ${worker.name} has failed after all attempts.`, { error: err.message });
+    } else {
+      logger.error(`An unknown job in queue ${worker.name} failed.`, { error: err.message });
+    }
+  } catch (e) {
+    logger.error('CRITICAL: Failed to handle job failure event. This may cause a crash.', { error: e });
   }
 });
 
 logger.info('Worker process started and listening for jobs.');
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', { reason });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', { error });
+});

@@ -37,6 +37,17 @@ export const notFound = (c: Context, message = 'Resource not found') => {
   return error(c, message, 404);
 };
 
+export const accepted = (c: Context, message = 'Accepted') => {
+  return c.json<SuccessResponse<null>>(
+    {
+      success: true,
+      data: null,
+      message,
+    },
+    { status: 202 as any } 
+  );
+};
+
 export const unauthorized = (c: Context, message = 'Unauthorized') => {
   return error(c, message, 401);
 };

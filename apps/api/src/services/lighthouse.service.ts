@@ -51,177 +51,30 @@ const defaultOptions: LighthouseOptions = {
     deviceScaleFactor: 1,
     disabled: false,
   },
-  retries: 2
+  retries: 0
 };
 
-// Enhanced Chrome executable detection with verification
 const getChromeExecutablePath = () => {
-  // First try to use which/whereis commands to find Chrome
-  const commands = [
-    'which google-chrome-stable',
-    'which google-chrome',
-    'which chromium-browser',
-    'which chromium',
-    'whereis google-chrome-stable',
-    'whereis google-chrome',
-    'whereis chromium-browser',
-    'whereis chromium'
-  ];
-
-  for (const cmd of commands) {
-    try {
-      const result = execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim();
-      if (result && !result.includes('not found')) {
-        const path = result.split(':')[1]?.trim() || result.split(' ')[0]?.trim() || result;
-        if (path && fs.existsSync(path)) {
-          try {
-            fs.accessSync(path, fs.constants.X_OK);
-            console.log(`Found executable Chrome via command '${cmd}':`, path);
-            return path;
-          } catch (error) {
-            console.log(`Chrome found but not executable at: ${path}`);
-          }
-        }
-      }
-    } catch (error) {
-      // Command failed, continue
-    }
-  }
-
-  // Try Puppeteer's bundled Chrome if system Chrome not found
   try {
     const puppeteerExecutable = puppeteer.executablePath();
     if (puppeteerExecutable && fs.existsSync(puppeteerExecutable)) {
-      try {
-        fs.accessSync(puppeteerExecutable, fs.constants.X_OK);
-        console.log('Using Puppeteer bundled Chrome:', puppeteerExecutable);
-        return puppeteerExecutable;
-      } catch (error) {
-        console.log('Puppeteer Chrome found but not executable:', puppeteerExecutable);
-      }
+      console.log('Using Puppeteer bundled Chrome:', puppeteerExecutable);
+      return puppeteerExecutable;
     }
   } catch (error) {
     console.log('Puppeteer bundled Chrome not available:', error);
   }
 
-  // Environment variables
-  const envPaths = [
-    process.env.PUPPETEER_EXECUTABLE_PATH,
-    process.env.GOOGLE_CHROME_BIN,
-    process.env.CHROME_BIN,
-  ];
-
-  for (const path of envPaths) {
-    if (path && fs.existsSync(path)) {
-      try {
-        fs.accessSync(path, fs.constants.X_OK);
-        console.log('Found executable Chrome from environment:', path);
-        return path;
-      } catch (error) {
-        console.log('Chrome from environment not executable:', path);
-      }
-    }
+  const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.GOOGLE_CHROME_BIN || process.env.CHROME_BIN;
+  if (envPath && fs.existsSync(envPath)) {
+    console.log('Using Chrome from environment variable:', envPath);
+    return envPath;
   }
 
-  // Common system paths as fallback
-  const possiblePaths = [
-    // Puppeteer cache locations (various versions)
-    '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
-    '/root/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
-    '/home/render/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome',
-    // System Chrome locations
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-    '/snap/bin/chromium',
-    '/usr/local/bin/chrome',
-    '/usr/local/bin/chromium',
-    '/opt/google/chrome/chrome',
-    '/opt/google/chrome/google-chrome',
-  ];
-
-  for (const pathPattern of possiblePaths) {
-    if (pathPattern.includes('*')) {
-      // Handle glob patterns
-      try {
-        const matches = glob.sync(pathPattern);
-        for (const match of matches) {
-          if (fs.existsSync(match)) {
-            try {
-              fs.accessSync(match, fs.constants.X_OK);
-              console.log('Found executable Chrome via glob pattern:', match);
-              return match;
-            } catch (error) {
-              console.log('Chrome found but not executable:', match);
-            }
-          }
-        }
-      } catch (error) {
-        // Glob not available or failed, continue
-      }
-    } else {
-      if (fs.existsSync(pathPattern)) {
-        try {
-          fs.accessSync(pathPattern, fs.constants.X_OK);
-          console.log('Found executable Chrome at system path:', pathPattern);
-          return pathPattern;
-        } catch (error) {
-          console.log('Chrome found but not executable:', pathPattern);
-        }
-      }
-    }
-  }
-
-  console.log('No Chrome executable found in any of the expected locations');
+  console.log('No Chrome executable found.');
   return undefined;
 };
 
-// Attempt to install Chrome if not found
-const ensureChromeInstalled = async (): Promise<string | undefined> => {
-  let chromePath = getChromeExecutablePath();
-  
-  if (chromePath) {
-    return chromePath;
-  }
-
-  console.log('Chrome not found, attempting to install...');
-  
-  // Try multiple installation methods
-  const installCommands = [
-    // Puppeteer install
-    'npx puppeteer browsers install chrome',
-    // System package manager installs
-    'apt-get update && apt-get install -y google-chrome-stable',
-    'apt-get update && apt-get install -y chromium-browser',
-    'yum install -y google-chrome-stable',
-    'yum install -y chromium',
-    // Alternative Puppeteer install
-    'npm install puppeteer && npx puppeteer browsers install chrome',
-  ];
-
-  for (const cmd of installCommands) {
-    try {
-      console.log(`Trying installation command: ${cmd}`);
-      execSync(cmd, { 
-        encoding: 'utf8', 
-        stdio: 'pipe',
-        timeout: 120000 // 2 minutes timeout
-      });
-      
-      // Check if Chrome is now available
-      chromePath = getChromeExecutablePath();
-      if (chromePath) {
-        console.log(`Chrome successfully installed via: ${cmd}`);
-        return chromePath;
-      }
-    } catch (error) {
-      console.log(`Installation command failed: ${cmd}`, error);
-    }
-  }
-
-  return undefined;
-};
 
 const clearPerformanceMarks = () => {
   try {
@@ -268,15 +121,14 @@ export const runLighthouseAnalysis = async (
     
     try {
       await forceCleanPerformance();
+      await new Promise(resolve => setTimeout(resolve, 5000));
       
-      // Ensure Chrome is installed and get path
-      const chromeExecutable = await ensureChromeInstalled();
+      const chromeExecutable = getChromeExecutablePath();
       
       if (!chromeExecutable) {
-        throw new Error('Chrome installation failed - no executable found after installation attempts');
+        throw new Error('Chrome executable not found. Please install Chrome or set the PUPPETEER_EXECUTABLE_PATH environment variable.');
       }
       
-      // Enhanced browser configuration
       const browserOptions: any = {
         headless: true,
         executablePath: chromeExecutable,
@@ -330,7 +182,6 @@ export const runLighthouseAnalysis = async (
 
       browser = await puppeteer.launch(browserOptions);
 
-      // Wait for browser to fully initialize
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const config = {
@@ -467,7 +318,6 @@ export const runLighthouseAnalysis = async (
   }
 
   if (lastError) {
-    // Enhanced error messages
     if (lastError.message.includes('Could not find Chrome') || 
         lastError.message.includes('Browser was not found') ||
         lastError.message.includes('Chrome installation failed')) {
