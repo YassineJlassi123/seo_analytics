@@ -8,7 +8,7 @@ import type { Variables } from '@/types/index.js';
 
 const app = new Hono<{ Variables: Variables }>()
   .use('*', cors({
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3000/'],
+    origin: [process.env.FRONTEND_URL || 'https://my-turbo-app.vercel.app/'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
     credentials: true,
