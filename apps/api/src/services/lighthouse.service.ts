@@ -1,3 +1,4 @@
+import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer';
 import lighthouse from 'lighthouse';
 import { execSync } from 'child_process';
@@ -54,26 +55,7 @@ const defaultOptions: LighthouseOptions = {
   retries: 0
 };
 
-const getChromeExecutablePath = () => {
-  try {
-    const puppeteerExecutable = puppeteer.executablePath();
-    if (puppeteerExecutable && fs.existsSync(puppeteerExecutable)) {
-      console.log('Using Puppeteer bundled Chrome:', puppeteerExecutable);
-      return puppeteerExecutable;
-    }
-  } catch (error) {
-    console.log('Puppeteer bundled Chrome not available:', error);
-  }
 
-  const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.GOOGLE_CHROME_BIN || process.env.CHROME_BIN;
-  if (envPath && fs.existsSync(envPath)) {
-    console.log('Using Chrome from environment variable:', envPath);
-    return envPath;
-  }
-
-  console.log('No Chrome executable found.');
-  return undefined;
-};
 
 
 const clearPerformanceMarks = () => {
@@ -123,50 +105,9 @@ export const runLighthouseAnalysis = async (
       await forceCleanPerformance();
       await new Promise(resolve => setTimeout(resolve, 5000));
       
-      const chromeExecutable = getChromeExecutablePath();
-      
-      if (!chromeExecutable) {
-        throw new Error('Chrome executable not found. Please install Chrome or set the PUPPETEER_EXECUTABLE_PATH environment variable.');
-      }
-      
+      const isProduction = process.env.NODE_ENV === 'production';
       const browserOptions: any = {
-        headless: true,
-        executablePath: chromeExecutable,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-features=site-per-process',
-          '--disable-extensions',
-          '--disable-translate',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection',
-          '--disable-background-networking',
-          '--disable-client-side-phishing-detection',
-          '--disable-sync',
-          '--metrics-recording-only',
-          '--no-experiments',
-          '--disable-web-security',
-          '--disable-features=VizDisplayCompositor',
-          '--disable-component-extensions-with-background-pages',
-          '--disable-software-rasterizer',
-          '--disable-default-apps',
-          '--hide-scrollbars',
-          '--mute-audio',
-          '--no-default-browser-check',
-          '--no-pings',
-          '--disable-crash-reporter',
-          '--disable-logging',
-          '--memory-pressure-off',
-          '--max-old-space-size=4096',
-        ],
+        headless: 'new',
         timeout: 120000,
         protocolTimeout: 120000,
         handleSIGINT: false,
@@ -174,10 +115,15 @@ export const runLighthouseAnalysis = async (
         handleSIGHUP: false,
       };
 
+      if (isProduction) {
+        browserOptions.executablePath = await chromium.executablePath();
+        browserOptions.args = chromium.args;
+      }
+
       console.log('Launching browser with options:', {
-        executablePath: browserOptions.executablePath,
-        isProduction: process.env.NODE_ENV === 'production',
-        attempt: attempt + 1
+        executablePath: browserOptions.executablePath || 'default (local)',
+        isProduction,
+        attempt: attempt + 1,
       });
 
       browser = await puppeteer.launch(browserOptions);
